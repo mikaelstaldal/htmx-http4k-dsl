@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" data-th-replace="~{layout.html :: layout(~{::title/content()}, ~{::content})}">
+<body>
+<h1 data-th-fragment="title">Click to load</h1>
+<table data-th-fragment="content">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>ID</th>
+    </tr>
+    </thead>
+    <tbody data-th-insert="~{AgentsList.html}"></tbody>
+</table>
+</body>
+</html>
