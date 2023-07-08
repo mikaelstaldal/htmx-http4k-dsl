@@ -1,6 +1,9 @@
 package nu.staldal.htmxhttp4kdsl
 
+import kotlinx.html.DIV
+import kotlinx.html.FORM
 import kotlinx.html.InputType
+import kotlinx.html.TagConsumer
 import kotlinx.html.button
 import kotlinx.html.classes
 import kotlinx.html.div
@@ -157,11 +160,7 @@ private fun options(choices: List<IdName>) =
 private fun agentsList(agents: List<Agent>, page: Int) =
     createHTML().fragment {
         agents.forEach { agent ->
-            tr {
-                td { +agent.name }
-                td { +agent.email }
-                td { +agent.id }
-            }
+            agentRow(agent)
         }
         tr {
             id = "replaceMe"
@@ -180,11 +179,7 @@ private fun agentsList(agents: List<Agent>, page: Int) =
 private fun agentsListInfinite(agents: List<Agent>, page: Int) =
     createHTML().fragment {
         agents.dropLast(1).forEach { agent ->
-            tr {
-                td { +agent.name }
-                td { +agent.email }
-                td { +agent.id }
-            }
+            agentRow(agent)
         }
         tr {
             attributes["data-hx-get"] = "/infinite-agents/?page=${page}"
@@ -196,29 +191,22 @@ private fun agentsListInfinite(agents: List<Agent>, page: Int) =
         }
     }
 
+private fun TagConsumer<String>.agentRow(agent: Agent) {
+    tr {
+        td { +agent.name }
+        td { +agent.email }
+        td { +agent.id }
+    }
+}
+
 private fun viewPerson(person: Person) =
     createHTML()
         .div {
             attributes["data-hx-target"] = "this"
             attributes["data-hx-swap"] = "outerHTML"
-            div {
-                label {
-                    +"First Name"
-                }
-                +": ${person.firstName}"
-            }
-            div {
-                label {
-                    +"Last Name"
-                }
-                +": ${person.lastName}"
-            }
-            div {
-                label {
-                    +"Email"
-                }
-                +": ${person.email}"
-            }
+            viewControl("First Name", person.firstName)
+            viewControl("Last Name", person.lastName)
+            viewControl("Email", person.email)
             button {
                 classes = setOf("btn", "btn-primary")
                 attributes["data-hx-get"] = "/person/edit"
@@ -226,44 +214,24 @@ private fun viewPerson(person: Person) =
             }
         }
 
+private fun DIV.viewControl(label: String, value: String) {
+    div {
+        label {
+            +label
+        }
+        +": $value"
+    }
+}
+
 private fun editPerson(person: Person) =
     createHTML()
         .form {
             attributes["data-hx-put"] = "/person"
             attributes["data-hx-target"] = "this"
             attributes["data-hx-swap"] = "outerHTML"
-            div {
-                label {
-                    +"First Name"
-                }
-                input {
-                    type = InputType.text
-                    name = "firstName"
-                    value = person.firstName
-                }
-            }
-            div {
-                classes = setOf("form-group")
-                label {
-                    +"Last Name"
-                }
-                input {
-                    type = InputType.text
-                    name = "lastName"
-                    value = person.lastName
-                }
-            }
-            div {
-                classes = setOf("form-group")
-                label {
-                    +"Email"
-                }
-                input {
-                    type = InputType.email
-                    name = "email"
-                    value = person.email
-                }
-            }
+            editControl("First Name", "firstName", person.firstName)
+            editControl("Last Name", "lastName", person.lastName)
+            editControl("Email", "email", person.email)
             button {
                 classes = setOf("btn")
                 +"Submit"
@@ -274,3 +242,17 @@ private fun editPerson(person: Person) =
                 +"Cancel"
             }
         }
+
+private fun FORM.editControl(label: String, id: String, theValue: String) {
+    div {
+        classes = setOf("form-group")
+        label {
+            +label
+        }
+        input {
+            type = InputType.text
+            name = id
+            value = theValue
+        }
+    }
+}
