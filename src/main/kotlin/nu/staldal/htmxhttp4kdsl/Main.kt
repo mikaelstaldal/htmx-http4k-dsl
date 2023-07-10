@@ -2,15 +2,20 @@ package nu.staldal.htmxhttp4kdsl
 
 import kotlinx.html.stream.createHTML
 import org.http4k.core.Body
+import org.http4k.core.Method.DELETE
 import org.http4k.core.Method.GET
+import org.http4k.core.Method.PATCH
+import org.http4k.core.Method.POST
 import org.http4k.core.Method.PUT
 import org.http4k.core.Response
 import org.http4k.core.Status
+import org.http4k.core.Status.Companion.CREATED
 import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
 import org.http4k.filter.ServerFilters
 import org.http4k.lens.FormField
+import org.http4k.lens.Path
 import org.http4k.lens.Query
 import org.http4k.lens.Validator
 import org.http4k.lens.int
@@ -21,6 +26,7 @@ import org.http4k.routing.routes
 import org.http4k.routing.webJars
 import org.http4k.server.SunHttp
 import org.http4k.server.asServer
+import java.lang.Boolean.parseBoolean
 import java.util.UUID
 
 val firstNameField = FormField.string().required("firstName")
@@ -31,12 +37,21 @@ val personLens = Body.webForm(Validator.Strict, firstNameField, lastNameField, e
     .toLens()
 val pageLens = Query.int().required("page")
 val makeLens = Query.string().required("make")
+val idLens = Path.of("id")
+val descriptionField = FormField.string().required("description")
+val descriptionLens = Body.webForm(Validator.Strict, descriptionField).map { descriptionField(it) }.toLens()
+val doneField = FormField.string().optional("done")
+val doneLens =
+    Body.webForm(Validator.Strict, doneField).map { form -> doneField(form)?.let { parseBoolean(it) } ?: false }
+        .toLens()
 
 data class Person(val firstName: String, val lastName: String, val email: String)
 
 data class Agent(val number: Int, val name: String, val email: String, val id: String)
 
 data class IdName(val id: String, val name: String)
+
+data class Todo(val id: String, val description: String, var done: Boolean = false)
 
 private const val port = 8000
 
@@ -54,6 +69,13 @@ fun main() {
         "bmw" to listOf(IdName("325i", "325i"), IdName("325ix", "325ix"), IdName("X5", "X5"))
     )
 
+    val todo1 = Todo(UUID.randomUUID().toString(), "First thing", done = true)
+    val todo2 = Todo(UUID.randomUUID().toString(), "Second thing")
+    val todos = mutableMapOf(
+        todo1.id to todo1,
+        todo2.id to todo2
+    )
+
     val app = routes(
         "/" bind GET to {
             htmlPage { index() }
@@ -69,6 +91,9 @@ fun main() {
         },
         "/value-select" bind GET to {
             htmlPage { valueSelect(makes) }
+        },
+        "/todo-list" bind GET to {
+            htmlPage { todoList(todos.values) }
         },
 
         "/person" bind GET to {
@@ -105,6 +130,32 @@ fun main() {
                 htmlFragment(OK, createHTML().options { options(it) })
             } ?: Response(NOT_FOUND)
         },
+
+        "/todo" bind POST to { request ->
+            val description = descriptionLens(request)
+            val id = UUID.randomUUID().toString()
+            val todo = Todo(id, description)
+            println("created: $todo")
+            todos[id] = todo
+            htmlFragment(CREATED, createHTML().rows { todoRow(todo) })
+        },
+        "/todo/{id}" bind PATCH to { request ->
+            val id = idLens(request)
+            todos[id]?.let {
+                val done = doneLens(request)
+                println("Setting $it to done=$done")
+                it.done = done
+                htmlFragment(OK, createHTML().rows { todoRow(it) })
+            } ?: Response(NOT_FOUND)
+        },
+        "/todo/{id}" bind DELETE to { request ->
+            val id = idLens(request)
+            todos.remove(id)?.let {
+                println("removed: $it")
+                Response(OK)
+            } ?: Response(NOT_FOUND)
+        },
+
         webJars()
     )
 

@@ -48,6 +48,11 @@
             <artifactId>htmx.org</artifactId>
             <version>1.9.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>hyperscript.org</artifactId>
+            <version>0.9.8</version>
+        </dependency>
 
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
