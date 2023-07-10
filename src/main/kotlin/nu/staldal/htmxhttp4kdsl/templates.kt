@@ -141,9 +141,9 @@ fun HTML.valueSelect(makes: List<IdName>) {
                 label { +"""Make""" }
                 select {
                     name = "make"
-                    attributes["data-hx-get"] = "/models"
-                    attributes["data-hx-target"] = "#models"
-                    attributes["data-hx-indicator"] = ".htmx-indicator"
+                    attributes["hx-get"] = "/models"
+                    attributes["hx-target"] = "#models"
+                    attributes["hx-indicator"] = ".htmx-indicator"
                     option {
                         value = ""
                         selected = true
@@ -180,9 +180,9 @@ fun TBODY.agentsList(agents: List<Agent>, page: Int) {
         td {
             attributes["colspan"] = "3"
             button(classes = "btn") {
-                attributes["data-hx-get"] = "/agents/?page=${page}"
-                attributes["data-hx-target"] = "#replaceMe"
-                attributes["data-hx-swap"] = "outerHTML"
+                attributes["hx-get"] = "/agents/?page=${page}"
+                attributes["hx-target"] = "#replaceMe"
+                attributes["hx-swap"] = "outerHTML"
                 +"Load More Agents..."
             }
         }
@@ -194,9 +194,9 @@ fun TBODY.agentsListInfinite(agents: List<Agent>, page: Int) {
         agentRow(agent)
     }
     tr {
-        attributes["data-hx-get"] = "/infinite-agents/?page=${page}"
-        attributes["data-hx-trigger"] = "revealed"
-        attributes["data-hx-swap"] = "afterend"
+        attributes["hx-get"] = "/infinite-agents/?page=${page}"
+        attributes["hx-trigger"] = "revealed"
+        attributes["hx-swap"] = "afterend"
         td { +agents.last().name }
         td { +agents.last().email }
         td { +agents.last().id }
@@ -213,14 +213,14 @@ fun TBODY.agentRow(agent: Agent) {
 
 fun FlowContent.viewPerson(person: Person) {
     div {
-        attributes["data-hx-target"] = "this"
-        attributes["data-hx-swap"] = "outerHTML"
+        attributes["hx-target"] = "this"
+        attributes["hx-swap"] = "outerHTML"
         viewControl("First Name", person.firstName)
         viewControl("Last Name", person.lastName)
         viewControl("Email", person.email)
         button {
             classes = setOf("btn", "btn-primary")
-            attributes["data-hx-get"] = "/person/edit"
+            attributes["hx-get"] = "/person/edit"
             +"Click To Edit"
         }
     }
@@ -237,9 +237,9 @@ fun DIV.viewControl(label: String, value: String) {
 
 fun FlowContent.editPerson(person: Person) {
     form {
-        attributes["data-hx-put"] = "/person"
-        attributes["data-hx-target"] = "this"
-        attributes["data-hx-swap"] = "outerHTML"
+        attributes["hx-put"] = "/person"
+        attributes["hx-target"] = "this"
+        attributes["hx-swap"] = "outerHTML"
         editControl("First Name", "firstName", person.firstName)
         editControl("Last Name", "lastName", person.lastName)
         editControl("Email", "email", person.email)
@@ -249,7 +249,7 @@ fun FlowContent.editPerson(person: Person) {
         }
         button {
             classes = setOf("btn")
-            attributes["data-hx-get"] = "/person"
+            attributes["hx-get"] = "/person"
             +"Cancel"
         }
     }
