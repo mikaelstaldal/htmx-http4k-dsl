@@ -2,7 +2,6 @@ package nu.staldal.htmxhttp4kdsl
 
 import kotlinx.html.stream.createHTML
 import org.http4k.core.Body
-import org.http4k.core.ContentType.Companion.TEXT_HTML
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.PUT
 import org.http4k.core.Response
@@ -10,7 +9,6 @@ import org.http4k.core.Status
 import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
-import org.http4k.core.with
 import org.http4k.filter.ServerFilters
 import org.http4k.lens.FormField
 import org.http4k.lens.Query
@@ -43,9 +41,6 @@ data class IdName(val id: String, val name: String)
 private const val port = 8000
 
 fun main() {
-    val htmlLens =
-        Body.string(TEXT_HTML).map<String>({ throw UnsupportedOperationException("Cannot parse") }, { it }).toLens()
-
     var person = Person("Bob", "Smith", "bsmith@example.com")
 
     val agents = generateSequence(Agent(1, "Agent Smith", "void1@null.com", UUID.randomUUID().toString())) {
@@ -61,35 +56,35 @@ fun main() {
 
     val app = routes(
         "/" bind GET to {
-            Response(OK).with(htmlLens of createHTML().index())
+            htmlPage { index() }
         },
         "/click-to-edit" bind GET to {
-            Response(OK).with(htmlLens of createHTML().clickToEdit(person))
+            htmlPage { clickToEdit(person) }
         },
         "/click-to-load" bind GET to {
-            Response(OK).with(htmlLens of createHTML().clickToLoad(agents))
+            htmlPage { clickToLoad(agents) }
         },
         "/infinite-scroll" bind GET to {
-            Response(OK).with(htmlLens of createHTML().infiniteScroll(agents))
+            htmlPage { infiniteScroll(agents) }
         },
         "/value-select" bind GET to {
-            Response(OK).with(htmlLens of createHTML().valueSelect(makes))
+            htmlPage { valueSelect(makes) }
         },
 
         "/person" bind GET to {
-            Response(OK).with(htmlLens of createHTML().fragment { viewPerson(person) })
+            htmlFragment(OK, createHTML().fragment { viewPerson(person) })
         },
         "/person/edit" bind GET to {
-            Response(OK).with(htmlLens of createHTML().fragment { editPerson(person) })
+            htmlFragment(OK, createHTML().fragment { editPerson(person) })
         },
         "/person" bind PUT to { request ->
             person = personLens(request)
             println("Person updated: $person")
-            Response(OK).with(htmlLens of createHTML().fragment { viewPerson(person) })
+            htmlFragment(OK, createHTML().fragment { viewPerson(person) })
         },
         "/agents" bind GET to { request ->
             val page = pageLens(request)
-            Response(OK).with(htmlLens of createHTML().rows {
+            htmlFragment(OK, createHTML().rows {
                 agentsList(
                     agents.drop(10 * page).take(10).toList(),
                     page + 1
@@ -98,7 +93,7 @@ fun main() {
         },
         "/infinite-agents" bind GET to { request ->
             val page = pageLens(request)
-            Response(OK).with(htmlLens of createHTML().rows {
+            htmlFragment(OK, createHTML().rows {
                 agentsListInfinite(
                     agents.drop(10 * page).take(10).toList(), page + 1
                 )
@@ -107,7 +102,7 @@ fun main() {
         "/models" bind GET to { request ->
             val make = makeLens(request)
             models[make]?.let {
-                Response(OK).with(htmlLens of createHTML().options { options(it) })
+                htmlFragment(OK, createHTML().options { options(it) })
             } ?: Response(NOT_FOUND)
         },
         webJars()

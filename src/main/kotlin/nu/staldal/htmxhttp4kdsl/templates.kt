@@ -3,10 +3,10 @@ package nu.staldal.htmxhttp4kdsl
 import kotlinx.html.DIV
 import kotlinx.html.FORM
 import kotlinx.html.FlowContent
+import kotlinx.html.HTML
 import kotlinx.html.InputType
 import kotlinx.html.SELECT
 import kotlinx.html.TBODY
-import kotlinx.html.TagConsumer
 import kotlinx.html.a
 import kotlinx.html.body
 import kotlinx.html.button
@@ -16,7 +16,6 @@ import kotlinx.html.form
 import kotlinx.html.h1
 import kotlinx.html.h2
 import kotlinx.html.head
-import kotlinx.html.html
 import kotlinx.html.id
 import kotlinx.html.input
 import kotlinx.html.label
@@ -37,35 +36,34 @@ import kotlinx.html.ul
 
 private const val mainTitle = "htmx with http4k and Kotlin's HTML DSL (kotlinx.html)"
 
-fun <T, C : TagConsumer<T>> C.page(subtitle: String, block: DIV.() -> Unit) =
-    html {
-        lang = "en"
-        head {
-            meta {
-                charset = "UTF-8"
-            }
-            meta {
-                name = "viewport"
-                content = "width=device-width, initial-scale=1"
-            }
-            script {
-                type = "text/javascript"
-                src = "/webjars/htmx.org/1.9.2/dist/htmx.min.js"
-            }
-            title {
-                +mainTitle
-            }
+fun HTML.page(subtitle: String, block: DIV.() -> Unit) {
+    lang = "en"
+    head {
+        meta {
+            charset = "UTF-8"
         }
-        body {
-            h1 { +mainTitle }
-            h2 { +subtitle }
-            div {
-                block()
-            }
+        meta {
+            name = "viewport"
+            content = "width=device-width, initial-scale=1"
+        }
+        script {
+            type = "text/javascript"
+            src = "/webjars/htmx.org/1.9.2/dist/htmx.min.js"
+        }
+        title {
+            +mainTitle
         }
     }
+    body {
+        h1 { +mainTitle }
+        h2 { +subtitle }
+        div {
+            block()
+        }
+    }
+}
 
-fun <T, C : TagConsumer<T>> C.index() =
+fun HTML.index() {
     page("Examples") {
         ul {
             li {
@@ -94,13 +92,15 @@ fun <T, C : TagConsumer<T>> C.index() =
             }
         }
     }
+}
 
-fun <T, C : TagConsumer<T>> C.clickToEdit(person: Person) =
+fun HTML.clickToEdit(person: Person) {
     page("Click to edit") {
         viewPerson(person)
     }
+}
 
-fun <T, C : TagConsumer<T>> C.clickToLoad(agents: Sequence<Agent>) =
+fun HTML.clickToLoad(agents: Sequence<Agent>) {
     page("Click to load") {
         table {
             thead {
@@ -115,8 +115,9 @@ fun <T, C : TagConsumer<T>> C.clickToLoad(agents: Sequence<Agent>) =
             }
         }
     }
+}
 
-fun <T, C : TagConsumer<T>> C.infiniteScroll(agents: Sequence<Agent>) =
+fun HTML.infiniteScroll(agents: Sequence<Agent>) {
     page("Infinite scroll") {
         table {
             thead {
@@ -131,8 +132,9 @@ fun <T, C : TagConsumer<T>> C.infiniteScroll(agents: Sequence<Agent>) =
             }
         }
     }
+}
 
-fun <T, C : TagConsumer<T>> C.valueSelect(makes: List<IdName>) =
+fun HTML.valueSelect(makes: List<IdName>) {
     page("Value select") {
         div {
             div {
@@ -158,6 +160,7 @@ fun <T, C : TagConsumer<T>> C.valueSelect(makes: List<IdName>) =
             }
         }
     }
+}
 
 fun SELECT.options(choices: List<IdName>) {
     choices.forEach { choice ->
