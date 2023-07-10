@@ -69,25 +69,25 @@ fun HTML.index() {
             li {
                 a {
                     href = "/click-to-edit"
-                    +"""Click To Edit"""
+                    +"Click To Edit"
                 }
             }
             li {
                 a {
                     href = "/click-to-load"
-                    +"""Click To Load"""
+                    +"Click To Load"
                 }
             }
             li {
                 a {
                     href = "/infinite-scroll"
-                    +"""Infinite scroll"""
+                    +"Infinite scroll"
                 }
             }
             li {
                 a {
                     href = "/value-select"
-                    +"""Value select"""
+                    +"Value select"
                 }
             }
         }
@@ -105,9 +105,9 @@ fun HTML.clickToLoad(agents: Sequence<Agent>) {
         table {
             thead {
                 tr {
-                    th { +"""Name""" }
-                    th { +"""Email""" }
-                    th { +"""ID""" }
+                    th { +"Name" }
+                    th { +"Email" }
+                    th { +"ID" }
                 }
             }
             tbody {
@@ -122,9 +122,9 @@ fun HTML.infiniteScroll(agents: Sequence<Agent>) {
         table {
             thead {
                 tr {
-                    th { +"""Name""" }
-                    th { +"""Email""" }
-                    th { +"""ID""" }
+                    th { +"Name" }
+                    th { +"Email" }
+                    th { +"ID" }
                 }
             }
             tbody {
@@ -138,7 +138,7 @@ fun HTML.valueSelect(makes: List<IdName>) {
     page("Value select") {
         div {
             div {
-                label { +"""Make""" }
+                label { +"Make" }
                 select {
                     name = "make"
                     attributes["hx-get"] = "/models"
