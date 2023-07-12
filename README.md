@@ -17,5 +17,5 @@ java -jar target/htmx-http4k-dsl-1.0-SNAPSHOT-jar-with-dependencies.jar
 # Running directly
 
 ```shell
-mvn compile exec:exec
+mvn compile exec:java
 ```
