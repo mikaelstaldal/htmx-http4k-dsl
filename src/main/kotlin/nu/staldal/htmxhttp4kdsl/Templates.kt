@@ -9,10 +9,10 @@ import kotlinx.html.InputType
 import kotlinx.html.SELECT
 import kotlinx.html.TBODY
 import kotlinx.html.ThScope
+import kotlinx.html.UL
 import kotlinx.html.a
 import kotlinx.html.body
 import kotlinx.html.button
-import kotlinx.html.classes
 import kotlinx.html.div
 import kotlinx.html.form
 import kotlinx.html.h1
@@ -23,6 +23,7 @@ import kotlinx.html.input
 import kotlinx.html.label
 import kotlinx.html.lang
 import kotlinx.html.li
+import kotlinx.html.link
 import kotlinx.html.meta
 import kotlinx.html.option
 import kotlinx.html.script
@@ -57,14 +58,18 @@ fun HTML.page(subtitle: String, block: DIV.() -> Unit) {
             type = "text/javascript"
             src = "/webjars/hyperscript.org/0.9.8/dist/_hyperscript.min.js"
         }
+        link {
+            rel = "stylesheet"
+            href = "/webjars/bootstrap/5.3.0/dist/css/bootstrap.css"
+        }
         title {
             +mainTitle
         }
     }
     body {
-        h1 { +mainTitle }
-        h2 { +subtitle }
-        div {
+        div(classes = "container") {
+            h1 { +mainTitle }
+            h2 { +subtitle }
             block()
         }
     }
@@ -73,36 +78,20 @@ fun HTML.page(subtitle: String, block: DIV.() -> Unit) {
 fun HTML.index() {
     page("Examples") {
         ul {
-            li {
-                a {
-                    href = "/click-to-edit"
-                    +"Click To Edit"
-                }
-            }
-            li {
-                a {
-                    href = "/click-to-load"
-                    +"Click To Load"
-                }
-            }
-            li {
-                a {
-                    href = "/infinite-scroll"
-                    +"Infinite scroll"
-                }
-            }
-            li {
-                a {
-                    href = "/value-select"
-                    +"Value select"
-                }
-            }
-            li {
-                a {
-                    href = "/todo-list"
-                    +"To do list"
-                }
-            }
+            menuItem("/click-to-edit", "Click To Edit")
+            menuItem("/click-to-load", "Click To Load")
+            menuItem("/infinite-scroll", "Infinite scroll")
+            menuItem("/value-select", "Value select")
+            menuItem("/todo-list", "To do list")
+        }
+    }
+}
+
+fun UL.menuItem(url: String, text: String) {
+    li {
+        a {
+            href = url
+            +text
         }
     }
 }
@@ -113,9 +102,78 @@ fun HTML.clickToEdit(person: Person) {
     }
 }
 
+fun FlowContent.viewPerson(person: Person) {
+    div {
+        attributes["hx-target"] = "this"
+        attributes["hx-swap"] = "outerHTML"
+        viewControl("First Name", "firstName", person.firstName)
+        viewControl("Last Name", "lastName", person.lastName)
+        viewControl("Email", "email", person.email)
+        div {
+            button(classes = "btn btn-primary") {
+                attributes["hx-get"] = "/person/edit"
+                +"Click To Edit"
+            }
+        }
+    }
+}
+
+fun FlowContent.editPerson(person: Person) {
+    form {
+        attributes["hx-put"] = "/person"
+        attributes["hx-target"] = "this"
+        attributes["hx-swap"] = "outerHTML"
+        editControl("First Name", "firstName", person.firstName)
+        editControl("Last Name", "lastName", person.lastName)
+        editControl("Email", "email", person.email)
+        div {
+            button(classes = "btn btn-primary me-1") {
+                +"Submit"
+            }
+            button(classes = "btn btn-secondary") {
+                attributes["hx-get"] = "/person"
+                +"Cancel"
+            }
+        }
+    }
+}
+
+fun DIV.viewControl(label: String, id: String, theValue: String) {
+    div(classes = "row mb-1") {
+        label(classes = "col-sm-1 col-form-label") {
+            attributes["for"] = id
+            +label
+        }
+        div(classes = "col-sm-4") {
+            input(classes = "form-control-plaintext") {
+                type = InputType.text
+                readonly = true
+                name = id
+                value = theValue
+            }
+        }
+    }
+}
+
+fun FORM.editControl(label: String, id: String, theValue: String) {
+    div(classes = "row mb-1") {
+        label(classes = "col-sm-1 col-form-label") {
+            attributes["for"] = id
+            +label
+        }
+        div(classes = "col-sm-4") {
+            input(classes = "form-control") {
+                type = InputType.text
+                name = id
+                value = theValue
+            }
+        }
+    }
+}
+
 fun HTML.clickToLoad(agents: Sequence<Agent>) {
     page("Click to load") {
-        table {
+        table(classes = "table") {
             thead {
                 tr {
                     th { +"Name" }
@@ -130,9 +188,31 @@ fun HTML.clickToLoad(agents: Sequence<Agent>) {
     }
 }
 
+fun TBODY.agentsList(agents: List<Agent>, page: Int) {
+    agents.forEach { agent ->
+        tr {
+            td { +agent.name }
+            td { +agent.email }
+            td { +agent.id }
+        }
+    }
+    tr {
+        id = "replaceMe"
+        td {
+            attributes["colspan"] = "3"
+            button(classes = "btn btn-light") {
+                attributes["hx-get"] = "/agents/?page=${page}"
+                attributes["hx-target"] = "#replaceMe"
+                attributes["hx-swap"] = "outerHTML"
+                +"Load More Agents..."
+            }
+        }
+    }
+}
+
 fun HTML.infiniteScroll(agents: Sequence<Agent>) {
     page("Infinite scroll") {
-        table {
+        table(classes = "table") {
             thead {
                 tr {
                     th { +"Name" }
@@ -147,35 +227,75 @@ fun HTML.infiniteScroll(agents: Sequence<Agent>) {
     }
 }
 
+fun TBODY.agentsListInfinite(agents: List<Agent>, page: Int) {
+    agents.dropLast(1).forEach { agent ->
+        tr {
+            td { +agent.name }
+            td { +agent.email }
+            td { +agent.id }
+        }
+    }
+    val lastAgent = agents.last()
+    tr {
+        attributes["hx-get"] = "/infinite-agents/?page=${page}"
+        attributes["hx-trigger"] = "revealed"
+        attributes["hx-swap"] = "afterend"
+        td { +lastAgent.name }
+        td { +lastAgent.email }
+        td { +lastAgent.id }
+    }
+}
+
 fun HTML.valueSelect(makes: List<IdName>) {
     page("Value select") {
         div {
-            label { +"Make" }
-            select {
-                name = "make"
-                attributes["hx-get"] = "/models"
-                attributes["hx-target"] = "#models"
-                attributes["hx-indicator"] = ".htmx-indicator"
-                option {
-                    value = ""
-                    selected = true
+            div(classes = "row mb-3") {
+                label(classes = "col-sm-1 col-form-label") {
+                    attributes["for"] = "make"
+                    +"Make"
                 }
-                options(makes)
+                div(classes = "col-sm-2") {
+                    select(classes = "form-select") {
+                        name = "make"
+                        attributes["hx-get"] = "/models"
+                        attributes["hx-target"] = "#model"
+                        attributes["hx-indicator"] = ".htmx-indicator"
+                        option {
+                            value = ""
+                            selected = true
+                        }
+                        options(makes)
+                    }
+                }
+            }
+            div(classes = "row mb-3") {
+                label(classes = "col-sm-1 col-form-label") {
+                    attributes["for"] = "model"
+                    +"Model"
+                }
+                div(classes = "col-sm-2") {
+                    select(classes = "form-select") {
+                        id = "model"
+                        name = "model"
+                    }
+                }
             }
         }
-        div {
-            label { +"Model" }
-            select {
-                id = "models"
-                name = "model"
-            }
+    }
+}
+
+fun SELECT.options(choices: List<IdName>) {
+    choices.forEach { choice ->
+        option {
+            value = choice.id
+            +choice.name
         }
     }
 }
 
 fun HTML.todoList(todoList: Iterable<Todo>) {
     page("To do list") {
-        table("table table-hover") {
+        table(classes = "table table-hover") {
             thead {
                 tr {
                     th {
@@ -212,7 +332,7 @@ fun HTML.todoList(todoList: Iterable<Todo>) {
                         }
                     }
                     td {
-                        button {
+                        button(classes = "btn btn-primary") {
                             attributes["_"] = "on htmx:afterRequest put '' into #description.value"
                             attributes["hx-post"] = "/todo"
                             attributes["hx-include"] = "#description"
@@ -248,116 +368,9 @@ fun TBODY.todoRow(todo: Todo) {
                 attributes["hx-confirm"] = "Are you sure?"
                 attributes["hx-delete"] = "/todo/${todo.id}"
                 attributes["hx-target"] = "closest tr"
-                attributes["hx-swap"] = "outerHTML swap:1s"
+                attributes["hx-swap"] = "outerHTML swap:0.5s"
                 +"Delete"
             }
-        }
-    }
-}
-
-fun SELECT.options(choices: List<IdName>) {
-    choices.forEach { choice ->
-        option {
-            value = choice.id
-            +choice.name
-        }
-    }
-}
-
-fun TBODY.agentsList(agents: List<Agent>, page: Int) {
-    agents.forEach { agent ->
-        agentRow(agent)
-    }
-    tr {
-        id = "replaceMe"
-        td {
-            attributes["colspan"] = "3"
-            button(classes = "btn") {
-                attributes["hx-get"] = "/agents/?page=${page}"
-                attributes["hx-target"] = "#replaceMe"
-                attributes["hx-swap"] = "outerHTML"
-                +"Load More Agents..."
-            }
-        }
-    }
-}
-
-fun TBODY.agentsListInfinite(agents: List<Agent>, page: Int) {
-    agents.dropLast(1).forEach { agent ->
-        agentRow(agent)
-    }
-    tr {
-        attributes["hx-get"] = "/infinite-agents/?page=${page}"
-        attributes["hx-trigger"] = "revealed"
-        attributes["hx-swap"] = "afterend"
-        td { +agents.last().name }
-        td { +agents.last().email }
-        td { +agents.last().id }
-    }
-}
-
-fun TBODY.agentRow(agent: Agent) {
-    tr {
-        td { +agent.name }
-        td { +agent.email }
-        td { +agent.id }
-    }
-}
-
-fun FlowContent.viewPerson(person: Person) {
-    div {
-        attributes["hx-target"] = "this"
-        attributes["hx-swap"] = "outerHTML"
-        viewControl("First Name", person.firstName)
-        viewControl("Last Name", person.lastName)
-        viewControl("Email", person.email)
-        button {
-            classes = setOf("btn", "btn-primary")
-            attributes["hx-get"] = "/person/edit"
-            +"Click To Edit"
-        }
-    }
-}
-
-fun DIV.viewControl(label: String, value: String) {
-    div {
-        label {
-            +label
-        }
-        +": $value"
-    }
-}
-
-fun FlowContent.editPerson(person: Person) {
-    form {
-        attributes["hx-put"] = "/person"
-        attributes["hx-target"] = "this"
-        attributes["hx-swap"] = "outerHTML"
-        editControl("First Name", "firstName", person.firstName)
-        editControl("Last Name", "lastName", person.lastName)
-        editControl("Email", "email", person.email)
-        button {
-            classes = setOf("btn")
-            +"Submit"
-        }
-        button {
-            classes = setOf("btn")
-            attributes["hx-get"] = "/person"
-            +"Cancel"
-        }
-    }
-}
-
-fun FORM.editControl(label: String, id: String, theValue: String) {
-    div {
-        classes = setOf("form-group")
-        label {
-            +label
-        }
-        input {
-            type = InputType.text
-            name = id
-            value = theValue
         }
     }
 }
