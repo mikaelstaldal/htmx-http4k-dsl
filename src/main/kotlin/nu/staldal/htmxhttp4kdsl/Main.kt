@@ -13,8 +13,10 @@ import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
 import org.http4k.filter.ServerFilters
+import org.http4k.routing.ResourceLoader
 import org.http4k.routing.bind
 import org.http4k.routing.routes
+import org.http4k.routing.static
 import org.http4k.routing.webJars
 import org.http4k.server.SunHttp
 import org.http4k.server.asServer
@@ -41,6 +43,9 @@ fun main() {
         "/value-select" bind GET to {
             htmlPage { valueSelect(dataStore.makes) }
         },
+        "/modal-dialog" bind GET to {
+            htmlPage { modalDialog() }
+        },
         "/todo-list" bind GET to {
             htmlPage { todoList(dataStore.todos.values) }
         },
@@ -56,6 +61,7 @@ fun main() {
             println("Person updated: ${dataStore.person}")
             htmlFragment(OK, createHTML().fragment { viewPerson(dataStore.person) })
         },
+
         "/agents" bind GET to { request ->
             val page = pageLens(request)
             htmlFragment(OK, createHTML().rows {
@@ -65,6 +71,7 @@ fun main() {
                 )
             })
         },
+
         "/infinite-agents" bind GET to { request ->
             val page = pageLens(request)
             htmlFragment(OK, createHTML().rows {
@@ -73,11 +80,16 @@ fun main() {
                 )
             })
         },
+
         "/models" bind GET to { request ->
             val make = makeLens(request)
             dataStore.models[make]?.let {
                 htmlFragment(OK, createHTML().options { options(it) })
             } ?: Response(NOT_FOUND)
+        },
+
+        "/modal" bind GET to {
+            htmlFragment(OK, createHTML().fragment { dialogContent() })
         },
 
         "/todo" bind POST to { request ->
@@ -105,6 +117,7 @@ fun main() {
             } ?: Response(NOT_FOUND)
         },
 
+        "/assets" bind static(ResourceLoader.Classpath("/assets")),
         webJars()
     )
 
