@@ -1,7 +1,6 @@
 package nu.staldal.htmxhttp4kdsl
 
 import kotlinx.html.stream.createHTML
-import org.http4k.core.Body
 import org.http4k.core.Method.DELETE
 import org.http4k.core.Method.GET
 import org.http4k.core.Method.PATCH
@@ -14,104 +13,54 @@ import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
 import org.http4k.core.then
 import org.http4k.filter.ServerFilters
-import org.http4k.lens.FormField
-import org.http4k.lens.Path
-import org.http4k.lens.Query
-import org.http4k.lens.Validator
-import org.http4k.lens.int
-import org.http4k.lens.string
-import org.http4k.lens.webForm
 import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.http4k.routing.webJars
 import org.http4k.server.SunHttp
 import org.http4k.server.asServer
-import java.lang.Boolean.parseBoolean
 import java.util.UUID
-
-val firstNameField = FormField.string().required("firstName")
-val lastNameField = FormField.string().required("lastName")
-val emailField = FormField.string().required("email")
-val personLens = Body.webForm(Validator.Strict, firstNameField, lastNameField, emailField)
-    .map { Person(firstNameField(it), lastNameField(it), emailField(it)) }
-    .toLens()
-val pageLens = Query.int().required("page")
-val makeLens = Query.string().required("make")
-val idLens = Path.of("id")
-val descriptionField = FormField.string().required("description")
-val descriptionLens = Body.webForm(Validator.Strict, descriptionField).map { descriptionField(it) }.toLens()
-val doneField = FormField.string().optional("done")
-val doneLens =
-    Body.webForm(Validator.Strict, doneField).map { form -> doneField(form)?.let { parseBoolean(it) } ?: false }
-        .toLens()
-
-data class Person(val firstName: String, val lastName: String, val email: String)
-
-data class Agent(val number: Int, val name: String, val email: String, val id: String)
-
-data class IdName(val id: String, val name: String)
-
-data class Todo(val id: String, val description: String, var done: Boolean = false)
 
 private const val port = 8000
 
 fun main() {
-    var person = Person("Bob", "Smith", "bsmith@example.com")
-
-    val agents = generateSequence(Agent(1, "Agent Smith", "void1@null.com", UUID.randomUUID().toString())) {
-        Agent(it.number + 1, "Agent Smith", "void${it.number + 1}@null.com", UUID.randomUUID().toString())
-    }
-
-    val makes = listOf(IdName("audi", "Audi"), IdName("toyota", "Toyota"), IdName("bmw", "BMW"))
-    val models = mapOf(
-        "audi" to listOf(IdName("a1", "A1"), IdName("a3", "A3"), IdName("a6", "A6")),
-        "toyota" to listOf(IdName("landcruiser", "Landcruiser"), IdName("tacoma", "Tacoma"), IdName("yaris", "Yaris")),
-        "bmw" to listOf(IdName("325i", "325i"), IdName("325ix", "325ix"), IdName("X5", "X5"))
-    )
-
-    val todo1 = Todo(UUID.randomUUID().toString(), "First thing", done = true)
-    val todo2 = Todo(UUID.randomUUID().toString(), "Second thing")
-    val todos = mutableMapOf(
-        todo1.id to todo1,
-        todo2.id to todo2
-    )
+    val dataStore = DataStore()
 
     val app = routes(
         "/" bind GET to {
             htmlPage { index() }
         },
         "/click-to-edit" bind GET to {
-            htmlPage { clickToEdit(person) }
+            htmlPage { clickToEdit(dataStore.person) }
         },
         "/click-to-load" bind GET to {
-            htmlPage { clickToLoad(agents) }
+            htmlPage { clickToLoad(dataStore.agents) }
         },
         "/infinite-scroll" bind GET to {
-            htmlPage { infiniteScroll(agents) }
+            htmlPage { infiniteScroll(dataStore.agents) }
         },
         "/value-select" bind GET to {
-            htmlPage { valueSelect(makes) }
+            htmlPage { valueSelect(dataStore.makes) }
         },
         "/todo-list" bind GET to {
-            htmlPage { todoList(todos.values) }
+            htmlPage { todoList(dataStore.todos.values) }
         },
 
         "/person" bind GET to {
-            htmlFragment(OK, createHTML().fragment { viewPerson(person) })
+            htmlFragment(OK, createHTML().fragment { viewPerson(dataStore.person) })
         },
         "/person/edit" bind GET to {
-            htmlFragment(OK, createHTML().fragment { editPerson(person) })
+            htmlFragment(OK, createHTML().fragment { editPerson(dataStore.person) })
         },
         "/person" bind PUT to { request ->
-            person = personLens(request)
-            println("Person updated: $person")
-            htmlFragment(OK, createHTML().fragment { viewPerson(person) })
+            dataStore.person = personLens(request)
+            println("Person updated: $dataStore.person")
+            htmlFragment(OK, createHTML().fragment { viewPerson(dataStore.person) })
         },
         "/agents" bind GET to { request ->
             val page = pageLens(request)
             htmlFragment(OK, createHTML().rows {
                 agentsList(
-                    agents.drop(10 * page).take(10).toList(),
+                    dataStore.agents.drop(10 * page).take(10).toList(),
                     page + 1
                 )
             })
@@ -120,13 +69,13 @@ fun main() {
             val page = pageLens(request)
             htmlFragment(OK, createHTML().rows {
                 agentsListInfinite(
-                    agents.drop(10 * page).take(10).toList(), page + 1
+                    dataStore.agents.drop(10 * page).take(10).toList(), page + 1
                 )
             })
         },
         "/models" bind GET to { request ->
             val make = makeLens(request)
-            models[make]?.let {
+            dataStore.models[make]?.let {
                 htmlFragment(OK, createHTML().options { options(it) })
             } ?: Response(NOT_FOUND)
         },
@@ -136,12 +85,12 @@ fun main() {
             val id = UUID.randomUUID().toString()
             val todo = Todo(id, description)
             println("created: $todo")
-            todos[id] = todo
+            dataStore.todos[id] = todo
             htmlFragment(CREATED, createHTML().rows { todoRow(todo) })
         },
         "/todo/{id}" bind PATCH to { request ->
             val id = idLens(request)
-            todos[id]?.let {
+            dataStore.todos[id]?.let {
                 val done = doneLens(request)
                 println("Setting $it to done=$done")
                 it.done = done
@@ -150,7 +99,7 @@ fun main() {
         },
         "/todo/{id}" bind DELETE to { request ->
             val id = idLens(request)
-            todos.remove(id)?.let {
+            dataStore.todos.remove(id)?.let {
                 println("removed: $it")
                 Response(OK)
             } ?: Response(NOT_FOUND)
