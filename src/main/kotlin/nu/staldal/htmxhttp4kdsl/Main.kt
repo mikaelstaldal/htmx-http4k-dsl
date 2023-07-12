@@ -53,7 +53,7 @@ fun main() {
         },
         "/person" bind PUT to { request ->
             dataStore.person = personLens(request)
-            println("Person updated: $dataStore.person")
+            println("Person updated: ${dataStore.person}")
             htmlFragment(OK, createHTML().fragment { viewPerson(dataStore.person) })
         },
         "/agents" bind GET to { request ->
