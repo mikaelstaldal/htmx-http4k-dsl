@@ -16,8 +16,17 @@ val emailField = FormField.string().required("email")
 val personLens = Body.webForm(Validator.Strict, firstNameField, lastNameField, emailField)
     .map { Person(firstNameField(it), lastNameField(it), emailField(it)) }
     .toLens()
+
+
+val idsField = FormField.string().multi.required("ids")
+val idsLens =
+    Body.webForm(Validator.Ignore, idsField).map { if (it.fields.containsKey("ids")) idsField(it) else emptyList() }
+        .toLens()
+
 val pageLens = Query.int().required("page")
+
 val makeLens = Query.string().required("make")
+
 val idLens = Path.of("id")
 val descriptionField = FormField.string().required("description")
 val descriptionLens = Body.webForm(Validator.Strict, descriptionField).map { descriptionField(it) }.toLens()

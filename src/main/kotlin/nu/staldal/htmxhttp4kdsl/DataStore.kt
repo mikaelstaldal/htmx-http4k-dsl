@@ -5,6 +5,13 @@ import java.util.UUID
 class DataStore {
     var person = Person("Bob", "Smith", "bsmith@example.com")
 
+    val contacts: Map<String, Contact> = listOf(
+        Contact(UUID.randomUUID().toString(), "Joe Smith", "joe@smith.org", true),
+        Contact(UUID.randomUUID().toString(), "Angie MacDowell", "angie@macdowell.org", true),
+        Contact(UUID.randomUUID().toString(), "Fuqua Tarkenton", "fuqua@tarkenton.org", true),
+        Contact(UUID.randomUUID().toString(), "Kim Yee", "kim@yee.org", false)
+    ).associateBy { it.id }
+
     val agents = generateSequence(Agent(1, "Agent Smith", "void1@null.com", UUID.randomUUID().toString())) {
         Agent(it.number + 1, "Agent Smith", "void${it.number + 1}@null.com", UUID.randomUUID().toString())
     }

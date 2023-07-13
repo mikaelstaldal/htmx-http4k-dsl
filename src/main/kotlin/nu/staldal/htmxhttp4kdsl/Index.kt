@@ -12,6 +12,7 @@ fun HTML.index() {
         h3 { +"htmx UI" }
         ul {
             menuItem("/click-to-edit", "Click to edit")
+            menuItem("/bulk-update", "Bulk update")
             menuItem("/click-to-load", "Click to load")
             menuItem("/infinite-scroll", "Infinite scroll")
             menuItem("/value-select", "Value select")
