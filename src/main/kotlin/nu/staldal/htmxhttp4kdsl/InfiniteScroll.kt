@@ -36,7 +36,7 @@ fun TBODY.agentsListInfinite(agents: List<Agent>, page: Int) {
     }
     val lastAgent = agents.last()
     tr {
-        attributes["hx-get"] = "/infinite-agents/?page=${page}"
+        attributes["hx-get"] = "?page=${page}"
         attributes["hx-trigger"] = "revealed"
         attributes["hx-swap"] = "afterend"
         td { +lastAgent.name }

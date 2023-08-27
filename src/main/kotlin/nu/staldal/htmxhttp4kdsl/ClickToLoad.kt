@@ -41,7 +41,7 @@ fun TBODY.agentsList(agents: List<Agent>, page: Int) {
         td {
             attributes["colspan"] = "3"
             button(classes = "btn btn-light") {
-                attributes["hx-get"] = "/agents/?page=${page}"
+                attributes["hx-get"] = "?page=${page}"
                 attributes["hx-target"] = "#replaceMe"
                 attributes["hx-swap"] = "outerHTML"
                 +"Load More Agents..."

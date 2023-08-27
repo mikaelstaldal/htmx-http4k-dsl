@@ -12,13 +12,15 @@ import org.http4k.core.Status
 import org.http4k.core.Status.Companion.CREATED
 import org.http4k.core.Status.Companion.NOT_FOUND
 import org.http4k.core.Status.Companion.OK
+import org.http4k.core.isHtmx
 import org.http4k.core.then
 import org.http4k.filter.ServerFilters
 import org.http4k.routing.ResourceLoader
+import org.http4k.routing.Router.Companion.orElse
 import org.http4k.routing.bind
+import org.http4k.routing.htmxWebjars
 import org.http4k.routing.routes
 import org.http4k.routing.static
-import org.http4k.routing.webJars
 import org.http4k.server.SunHttp
 import org.http4k.server.asServer
 import java.util.UUID
@@ -38,12 +40,32 @@ fun main() {
         "/bulk-update" bind GET to {
             htmlPage { bulkUpdate(dataStore.contacts.values) }
         },
-        "/click-to-load" bind GET to {
-            htmlPage { clickToLoad(dataStore.agents) }
-        },
-        "/infinite-scroll" bind GET to {
-            htmlPage { infiniteScroll(dataStore.agents) }
-        },
+
+        "/click-to-load" bind GET to routes(
+            Request.isHtmx bind { request ->
+                val page = pageLens(request)
+                htmlFragment(OK, createHTML().rows {
+                    agentsList(
+                        dataStore.agents.drop(10 * page).take(10).toList(),
+                        page + 1
+                    )
+                })
+            },
+            orElse bind { htmlPage { clickToLoad(dataStore.agents) } }
+        ),
+
+        "/infinite-scroll" bind GET to routes(
+            Request.isHtmx bind { request ->
+                val page = pageLens(request)
+                htmlFragment(OK, createHTML().rows {
+                    agentsListInfinite(
+                        dataStore.agents.drop(10 * page).take(10).toList(), page + 1
+                    )
+                })
+            },
+            orElse bind { htmlPage { infiniteScroll(dataStore.agents) } }
+        ),
+
         "/value-select" bind GET to {
             htmlPage { valueSelect(dataStore.makes) }
         },
@@ -72,25 +94,6 @@ fun main() {
 
         "/contacts/deactivate" bind PUT to { request ->
             activateOrDeactivateContact(request, false, dataStore)
-        },
-
-        "/agents" bind GET to { request ->
-            val page = pageLens(request)
-            htmlFragment(OK, createHTML().rows {
-                agentsList(
-                    dataStore.agents.drop(10 * page).take(10).toList(),
-                    page + 1
-                )
-            })
-        },
-
-        "/infinite-agents" bind GET to { request ->
-            val page = pageLens(request)
-            htmlFragment(OK, createHTML().rows {
-                agentsListInfinite(
-                    dataStore.agents.drop(10 * page).take(10).toList(), page + 1
-                )
-            })
         },
 
         "/models" bind GET to { request ->
@@ -130,7 +133,9 @@ fun main() {
         },
 
         "/assets" bind static(ResourceLoader.Classpath("/assets")),
-        webJars()
+
+        htmxWebjars(),
+        static(ResourceLoader.Classpath("/META-INF/resources/webjars/bootstrap/5.3.0/dist"))
     )
 
     ServerFilters.CatchAll { t ->
