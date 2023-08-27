@@ -135,7 +135,7 @@ fun main() {
         "/assets" bind static(ResourceLoader.Classpath("/assets")),
 
         htmxWebjars(),
-        static(ResourceLoader.Classpath("/META-INF/resources/webjars/bootstrap/5.3.0/dist"))
+        webjar("bootstrap", "5.3.0")
     )
 
     ServerFilters.CatchAll { t ->
